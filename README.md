@@ -10,8 +10,8 @@ bash
 git clone
 https://github.com/Kreaslyy/SPA_Entrega1.git
 
-# Build the app
+Build the app
 $ npm run build
 
-# Run the app
+Run the app
 $ npm run start
