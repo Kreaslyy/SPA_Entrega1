@@ -1,17 +1,23 @@
-**Electiva 1**
+# Entrega 1 
 
-**Construido con**
-React.js
+- [Nicolás Arroyave Gomez](https://github.com/Kreaslyy)
 
-Scripts
+# Electiva 1
+
+# Construido con
+* React.js
+
+## Scripts
+
+```bash
 
 **Clona el Repositorio:**
 bash
 git clone
 https://github.com/Kreaslyy/SPA_Entrega1.git
 
-Build the app
+# Build the app
 $ npm run build
 
-Run the app
+# Run the app
 $ npm run start
