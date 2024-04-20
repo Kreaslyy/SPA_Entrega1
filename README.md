@@ -1,8 +1,10 @@
-Electiva 1
-Construido con
+**Electiva 1**
+
+**Construido con**
 React.js
-CSS3
+
 Scripts
+
 **Clona el Repositorio:**
 bash
 git clone
