@@ -6,7 +6,8 @@
 
 # Construido con
 * React.js
-
+* CSS
+  
 ## Scripts
 
 ```bash
