@@ -1,4 +1,4 @@
-# Entrega 1 
+# Entrega 2
 
 - [Nicolás Arroyave Gomez](https://github.com/Kreaslyy)
 
@@ -7,6 +7,9 @@
 # Construido con
 * React.js
 * CSS
+* Firebase
+
+* 
   
 ## Scripts
 
