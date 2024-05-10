@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { TextField, Button, Typography, Container, makeStyles, Snackbar } from '@material-ui/core';
-import userProfileData from '../data/userProfileData.json';
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/firestore';
 
 const useStyles = makeStyles((theme) => ({
   formContainer: {
@@ -8,17 +9,53 @@ const useStyles = makeStyles((theme) => ({
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
+    backgroundColor: '#ffffff',
+    padding: theme.spacing(4),
+    borderRadius: theme.spacing(1),
+    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+    maxWidth: 500,
+    width: '100%',
   },
   textField: {
     margin: theme.spacing(1),
     width: '100%',
+    '& .MuiOutlinedInput-root': {
+      '& fieldset': {
+        borderColor: '#3f51b5',
+      },
+      '&:hover fieldset': {
+        borderColor: '#283593',
+      },
+      '&.Mui-focused fieldset': {
+        borderColor: '#283593',
+      },
+    },
   },
   button: {
     marginTop: theme.spacing(2),
+    backgroundColor: '#3f51b5',
+    color: '#ffffff',
+    '&:hover': {
+      backgroundColor: '#283593',
+    },
+  },
+  avatar: {
+    width: '150px',
+    height: '150px',
+    borderRadius: '50%',
+    objectFit: 'cover',
+    marginBottom: theme.spacing(2),
+    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+  },
+  title: {
+    marginBottom: theme.spacing(3),
+    fontWeight: 'bold',
+    textAlign: 'center',
+    color: '#3f51b5',
   },
 }));
 
-const UserProfile = () => {
+const UserProfile = (props) => {
   const classes = useStyles();
   const [userInfo, setUserInfo] = useState({
     username: '',
@@ -28,10 +65,31 @@ const UserProfile = () => {
   });
   const [snackbarOpen, setSnackbarOpen] = useState(false);
 
-  // Cargar los datos mockeados del usuario al montar el componente
   useEffect(() => {
-    setUserInfo(userProfileData);
-  }, []);
+    const fetchUserData = async () => {
+      const db = firebase.firestore();
+      const userId = props.userId;
+
+      try {
+        const userDoc = await db.collection('users').doc(userId).get();
+        if (userDoc.exists) {
+          const userData = userDoc.data();
+          setUserInfo({
+            username: userData.username || '',
+            email: userData.email || '',
+            bio: userData.bio || '',
+            avatar: userData.avatar || '',
+          });
+        } else {
+          console.log('No se encontró el usuario');
+        }
+      } catch (error) {
+        console.error('Error al obtener los datos del usuario: ', error);
+      }
+    };
+
+    fetchUserData();
+  }, [props.userId]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -44,20 +102,47 @@ const UserProfile = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Simulación de envío de datos actualizados al servidor
-    setTimeout(() => {
-      // Lógica para enviar los datos actualizados al servidor
-      console.log('Enviar datos actualizados:', userInfo);
-      // Después de recibir una respuesta exitosa del servidor
-      setSnackbarOpen(true); // Mostrar mensaje de confirmación
-    }, 1000);
+    const db = firebase.firestore();
+    const userId = props.userId;
+
+    const userData = {
+      ...userInfo,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    };
+
+    db.collection('users')
+      .doc(userId)
+      .set(userData, { merge: true })
+      .then(() => {
+        setSnackbarOpen(true);
+      })
+      .catch((error) => {
+        console.error('Error al actualizar los datos del usuario: ', error);
+      });
   };
 
   return (
     <Container maxWidth="sm">
       <div className={classes.formContainer}>
-        <Typography variant="h5" gutterBottom>Editar Perfil</Typography>
+        <Typography variant="h5" className={classes.title}>
+          Editar Perfil
+        </Typography>
         <form onSubmit={handleSubmit} className={classes.form}>
+          <img className={classes.avatar} src={userInfo.avatar} alt="Avatar" />
+          <TextField
+            className={classes.textField}
+            label="URL del avatar"
+            name="avatar"
+            value={userInfo.avatar}
+            onChange={handleInputChange}
+          />
+          <br />
+          <TextField
+            className={classes.textField}
+            label="ID de usuario"
+            value={props.userId}
+            disabled
+          />
           <TextField
             className={classes.textField}
             label="Nombre de usuario"
@@ -84,14 +169,6 @@ const UserProfile = () => {
             value={userInfo.bio}
             onChange={handleInputChange}
           />
-          <TextField
-            className={classes.textField}
-            label="URL del avatar"
-            name="avatar"
-            value={userInfo.avatar}
-            onChange={handleInputChange}
-          />
-          {/* Agrega más campos de formulario según sea necesario */}
           <Button
             className={classes.button}
             variant="contained"
@@ -101,7 +178,6 @@ const UserProfile = () => {
             Guardar cambios
           </Button>
         </form>
-        {/* Snackbar para mostrar mensaje de confirmación */}
         <Snackbar
           open={snackbarOpen}
           autoHideDuration={3000}

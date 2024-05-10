@@ -1,6 +1,15 @@
-import React, { useState } from 'react';
-import { Typography, Box, Paper, makeStyles, TextField, Button } from '@material-ui/core';
-import Rating from '@material-ui/lab/Rating'; // Importar Rating desde @material-ui/lab
+import React, { useState, useEffect } from 'react';
+import {
+  Typography,
+  Box,
+  Paper,
+  makeStyles,
+  TextField,
+  Button,
+  Card,
+  CardContent,
+} from '@material-ui/core';
+import Rating from '@material-ui/lab/Rating';
 import { useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
 import firebase from 'firebase/compat/app';
@@ -39,6 +48,10 @@ const useStyles = makeStyles((theme) => ({
   submitButton: {
     marginTop: theme.spacing(2),
   },
+  reviewCard: {
+    marginTop: theme.spacing(2),
+    padding: theme.spacing(2),
+  },
 }));
 
 const Details = (props) => {
@@ -47,11 +60,25 @@ const Details = (props) => {
   const listings = useSelector((state) => state.listings);
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
+  const [reviews, setReviews] = useState([]);
 
   const [name, marca] = id.split('-');
-  const listing = listings.find(
-    (l) => l.Name === name && l.Marca === marca
-  );
+  const listing = listings.find((l) => l.Name === name && l.Marca === marca);
+
+  useEffect(() => {
+    const fetchReviews = async () => {
+      const db = firebase.firestore();
+      const querySnapshot = await db
+        .collection('reviews')
+        .where('productId', '==', `${name}${marca}`)
+        .get();
+
+      const reviewsData = querySnapshot.docs.map((doc) => doc.data());
+      setReviews(reviewsData);
+    };
+
+    fetchReviews();
+  }, [name, marca]);
 
   if (!listing) {
     return <div>No se encontró el listado con el ID proporcionado.</div>;
@@ -79,10 +106,15 @@ const Details = (props) => {
 
   const handleSubmitReview = () => {
     const db = firebase.firestore();
-    const userId = props.userId; // Asumiendo que props.userId está disponible
+    const userId = props.userId;
+
+    if (!userId) {
+      console.error('No se proporcionó el userId');
+      return;
+    }
 
     const reviewData = {
-      productId: `${Name}${Marca}`, // Combinación de Name y Marca como referencia al producto
+      productId: `${Name}${Marca}`,
       userId,
       content: comment,
       rate: rating,
@@ -96,10 +128,22 @@ const Details = (props) => {
         console.log('Reseña agregada correctamente');
         setRating(0);
         setComment('');
+        fetchReviews(); // Actualizar las reseñas después de agregar una nueva
       })
       .catch((error) => {
         console.error('Error al agregar la reseña: ', error);
       });
+  };
+
+  const fetchReviews = async () => {
+    const db = firebase.firestore();
+    const querySnapshot = await db
+      .collection('reviews')
+      .where('productId', '==', `${Name}${Marca}`)
+      .get();
+
+    const reviewsData = querySnapshot.docs.map((doc) => doc.data());
+    setReviews(reviewsData);
   };
 
   return (
@@ -118,11 +162,7 @@ const Details = (props) => {
       </Typography>
       {getImageUrl(listing) && (
         <Box mt={4} className={classes.imageContainer}>
-          <img
-            src={getImageUrl(listing)}
-            alt={Name}
-            className={classes.image}
-          />
+          <img src={getImageUrl(listing)} alt={Name} className={classes.image} />
         </Box>
       )}
       <div className={classes.reviewContainer}>
@@ -131,11 +171,7 @@ const Details = (props) => {
         </Typography>
         <div className={classes.reviewForm}>
           <Box className={classes.ratingContainer}>
-            <Rating
-              value={rating}
-              onChange={handleRatingChange}
-              precision={0.5}
-            />
+            <Rating value={rating} onChange={handleRatingChange} precision={0.5} />
           </Box>
           <TextField
             className={classes.commentField}
@@ -157,6 +193,21 @@ const Details = (props) => {
           </Button>
         </div>
       </div>
+      <Typography variant="h6" gutterBottom>
+        Reseñas
+      </Typography>
+      {reviews.map((review, index) => (
+        <Card key={index} className={classes.reviewCard}>
+          <CardContent>
+            <Typography variant="body1" gutterBottom>
+              <strong>Calificación:</strong> {review.rate}
+            </Typography>
+            <Typography variant="body1" gutterBottom>
+              <strong>Comentario:</strong> {review.content}
+            </Typography>
+          </CardContent>
+        </Card>
+      ))}
     </Paper>
   );
 };
