@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TextField, Button, Typography, Container, makeStyles, Snackbar } from '@material-ui/core';
+import { TextField, Button, Typography, Container, makeStyles, Snackbar, Card, CardContent } from '@material-ui/core';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/firestore';
 
@@ -9,35 +9,13 @@ const useStyles = makeStyles((theme) => ({
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    backgroundColor: '#ffffff',
-    padding: theme.spacing(4),
-    borderRadius: theme.spacing(1),
-    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-    maxWidth: 500,
-    width: '100%',
   },
   textField: {
     margin: theme.spacing(1),
     width: '100%',
-    '& .MuiOutlinedInput-root': {
-      '& fieldset': {
-        borderColor: '#3f51b5',
-      },
-      '&:hover fieldset': {
-        borderColor: '#283593',
-      },
-      '&.Mui-focused fieldset': {
-        borderColor: '#283593',
-      },
-    },
   },
   button: {
     marginTop: theme.spacing(2),
-    backgroundColor: '#3f51b5',
-    color: '#ffffff',
-    '&:hover': {
-      backgroundColor: '#283593',
-    },
   },
   avatar: {
     width: '150px',
@@ -45,13 +23,24 @@ const useStyles = makeStyles((theme) => ({
     borderRadius: '50%',
     objectFit: 'cover',
     marginBottom: theme.spacing(2),
-    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
   },
-  title: {
-    marginBottom: theme.spacing(3),
-    fontWeight: 'bold',
-    textAlign: 'center',
-    color: '#3f51b5',
+  followersContainer: {
+    marginTop: theme.spacing(4),
+    width: '100%',
+    display: 'flex',
+    justifyContent: 'space-between',
+  },
+  followersCard: {
+    width: '48%',
+    padding: theme.spacing(2),
+  },
+  followingsList: {
+    listStyle: 'none',
+    padding: 0,
+    margin: 0,
+  },
+  followersListItem: {
+    marginBottom: theme.spacing(1),
   },
 }));
 
@@ -64,6 +53,8 @@ const UserProfile = (props) => {
     avatar: '',
   });
   const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [followers, setFollowers] = useState([]);
+  const [followings, setFollowings] = useState([]);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -88,7 +79,25 @@ const UserProfile = (props) => {
       }
     };
 
+    const fetchFollowersAndFollowings = async () => {
+      const db = firebase.firestore();
+      const userId = props.userId;
+
+      try {
+        const followersSnapshot = await db.collection('followers').doc(userId).collection('userFollowers').get();
+        const followersData = followersSnapshot.docs.map((doc) => doc.id);
+        setFollowers(followersData);
+
+        const followingsSnapshot = await db.collection('followings').doc(userId).collection('userFollowings').get();
+        const followingsData = followingsSnapshot.docs.map((doc) => doc.id);
+        setFollowings(followingsData);
+      } catch (error) {
+        console.error('Error al obtener los seguidores y seguidos: ', error);
+      }
+    };
+
     fetchUserData();
+    fetchFollowersAndFollowings();
   }, [props.userId]);
 
   const handleInputChange = (e) => {
@@ -124,7 +133,7 @@ const UserProfile = (props) => {
   return (
     <Container maxWidth="sm">
       <div className={classes.formContainer}>
-        <Typography variant="h5" className={classes.title}>
+        <Typography variant="h5" gutterBottom>
           Editar Perfil
         </Typography>
         <form onSubmit={handleSubmit} className={classes.form}>
@@ -184,6 +193,44 @@ const UserProfile = (props) => {
           onClose={handleSnackbarClose}
           message="Los cambios se guardaron correctamente"
         />
+        <div className={classes.followersContainer}>
+          <Card className={classes.followersCard}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Seguidores
+              </Typography>
+              {followers.length > 0 ? (
+                <ul className={classes.followingsList}>
+                  {followers.map((follower) => (
+                    <li key={follower} className={classes.followersListItem}>
+                      {follower}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <Typography variant="body1">No tienes seguidores</Typography>
+              )}
+            </CardContent>
+          </Card>
+          <Card className={classes.followersCard}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Seguidos
+              </Typography>
+              {followings.length > 0 ? (
+                <ul className={classes.followingsList}>
+                  {followings.map((following) => (
+                    <li key={following} className={classes.followersListItem}>
+                      {following}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <Typography variant="body1">No estás siguiendo a nadie</Typography>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </Container>
   );

@@ -1,58 +1,35 @@
-import React, { useState } from 'react';
-import { TextField, Button, makeStyles, Typography } from '@material-ui/core';
-import { getAuth, signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { useHistory } from 'react-router-dom';
+// Login.js
+import React, { useState } from "react";
+import { TextField, Button, Typography, Container, Box } from "@material-ui/core";
+import { makeStyles } from "@material-ui/core/styles";
+import { getAuth, signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
+import { useHistory } from "react-router-dom";
 
 const useStyles = makeStyles((theme) => ({
-  root: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: '100vh',
-    backgroundColor: '#f5f5f5',
+  container: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    height: "100vh",
   },
   form: {
-    backgroundColor: '#ffffff',
-    padding: theme.spacing(4),
-    borderRadius: theme.spacing(1),
-    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+    display: "flex",
+    flexDirection: "column",
+    gap: theme.spacing(2),
+    width: "100%",
     maxWidth: 400,
-    width: '100%',
-  },
-  textField: {
-    marginBottom: theme.spacing(2),
   },
   button: {
     marginTop: theme.spacing(2),
-    backgroundColor: '#3f51b5',
-    color: '#ffffff',
-    '&:hover': {
-      backgroundColor: '#283593',
-    },
-  },
-  googleButton: {
-    marginTop: theme.spacing(2),
-    backgroundColor: '#ffffff',
-    color: '#3f51b5',
-    border: '2px solid #3f51b5',
-    '&:hover': {
-      backgroundColor: '#3f51b5',
-      color: '#ffffff',
-    },
-  },
-  title: {
-    marginBottom: theme.spacing(3),
-    fontWeight: 'bold',
-    textAlign: 'center',
   },
 }));
 
-const Login = (props) => {
+const Login = () => {
   const classes = useStyles();
   const provider = new GoogleAuthProvider();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const history = useHistory();
 
   const handleCreateUser = () => {
@@ -60,16 +37,15 @@ const Login = (props) => {
     createUserWithEmailAndPassword(auth, email, password)
       .then((userCredential) => {
         const user = userCredential.user;
-        document.cookie = 'loggedIn=true';
-        debugger;
+        document.cookie = "loggedIn=true";
         document.cookie = `user=${JSON.stringify(user)}`;
-        history.push('/listing');
+        history.push("/listing");
         window.location.reload();
       })
       .catch((error) => {
         const errorCode = error.code;
-        if (errorCode === 'auth/email-already-in-use') {
-          alert('El usuario ya está registrado');
+        if (errorCode === "auth/email-already-in-use") {
+          alert("El usuario ya está registrado");
         } else {
           alert(errorCode);
         }
@@ -81,11 +57,10 @@ const Login = (props) => {
     signInWithEmailAndPassword(auth, email, password)
       .then((userCredential) => {
         const user = userCredential.user;
-        console.log('user', user);
-        debugger;
-        document.cookie = 'loggedIn=true';
+        console.log("user", user);
+        document.cookie = "loggedIn=true";
         document.cookie = `user=${JSON.stringify(user)}`;
-        history.push('/listing');
+        history.push("/listing");
         window.location.reload();
       })
       .catch((error) => {
@@ -103,9 +78,9 @@ const Login = (props) => {
         const token = credential.accessToken;
         const user = result.user;
         console.log(user);
-        document.cookie = 'loggedIn=true';
+        document.cookie = "loggedIn=true";
         document.cookie = `user=${JSON.stringify(user)}`;
-        history.push('/listing');
+        history.push("/listing");
         window.location.reload();
       })
       .catch((error) => {
@@ -116,62 +91,48 @@ const Login = (props) => {
   };
 
   return (
-    <div className={classes.root}>
-      <div className={classes.form}>
-        <Typography variant="h5" className={classes.title}>
-          Iniciar Sesión
-        </Typography>
+    <Container className={classes.container}>
+      <Typography variant="h4" align="center" gutterBottom>
+        Login
+      </Typography>
+      <form className={classes.form}>
         <TextField
-          className={classes.textField}
-          required
-          placeholder="Usuario"
-          label="Usuario"
+          label="Email"
+          type="email"
           value={email}
-          onChange={(e) => {
-            setEmail(e.target.value);
-          }}
-          fullWidth
-          variant="outlined"
+          onChange={(e) => setEmail(e.target.value)}
+          required
         />
         <TextField
-          className={classes.textField}
-          required
-          placeholder="Contraseña"
+          label="Password"
           type="password"
-          label="Contraseña"
           value={password}
-          onChange={(e) => {
-            setPassword(e.target.value);
-          }}
-          fullWidth
-          variant="outlined"
+          onChange={(e) => setPassword(e.target.value)}
+          required
         />
         <Button
-          fullWidth
           variant="contained"
-          className={classes.button}
-          onClick={handleCreateUser}
-        >
-          Crear usuario
-        </Button>
-        <Button
-          fullWidth
-          variant="contained"
-          className={classes.button}
+          color="primary"
           onClick={handleLoginEmail}
+          className={classes.button}
         >
-          Iniciar sesión
+          Login
         </Button>
         <Button
-          fullWidth
-          variant="contained"
-          className={classes.googleButton}
-          onClick={handleGoogle}
+          variant="outlined"
+          color="primary"
+          onClick={handleCreateUser}
+          className={classes.button}
         >
-          Iniciar sesión con Google
+          Create User
         </Button>
-      </div>
-    </div>
+        <Box mt={2}>
+          <Button variant="outlined" onClick={handleGoogle}>
+            Sign in with Google
+          </Button>
+        </Box>
+      </form>
+    </Container>
   );
 };
 

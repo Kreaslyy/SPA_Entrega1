@@ -8,12 +8,14 @@ import {
   Button,
   Card,
   CardContent,
+  IconButton,
 } from '@material-ui/core';
 import Rating from '@material-ui/lab/Rating';
 import { useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/firestore';
+import PersonAddIcon from '@material-ui/icons/PersonAdd';
 
 const useStyles = makeStyles((theme) => ({
   detailsContainer: {
@@ -52,6 +54,11 @@ const useStyles = makeStyles((theme) => ({
     marginTop: theme.spacing(2),
     padding: theme.spacing(2),
   },
+  followButton: {
+    marginTop: theme.spacing(2),
+    display: 'flex',
+    alignItems: 'center',
+  },
 }));
 
 const Details = (props) => {
@@ -61,6 +68,7 @@ const Details = (props) => {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [reviews, setReviews] = useState([]);
+  const [creatorUserId, setCreatorUserId] = useState(null);
 
   const [name, marca] = id.split('-');
   const listing = listings.find((l) => l.Name === name && l.Marca === marca);
@@ -79,6 +87,12 @@ const Details = (props) => {
 
     fetchReviews();
   }, [name, marca]);
+
+  useEffect(() => {
+    if (listing) {
+      setCreatorUserId(listing.userId);
+    }
+  }, [listing]);
 
   if (!listing) {
     return <div>No se encontró el listado con el ID proporcionado.</div>;
@@ -146,6 +160,32 @@ const Details = (props) => {
     setReviews(reviewsData);
   };
 
+  const handleFollow = () => {
+    const db = firebase.firestore();
+    const currentUserId = props.userId;
+    const creatorUserId = listing.userId;
+
+    // Agregar el usuario actual como seguidor del creador del producto
+    db.collection('followers')
+      .doc(creatorUserId)
+      .collection('userFollowers')
+      .doc(currentUserId)
+      .set({})
+      .catch((error) => {
+        console.error('Error al agregar seguidor: ', error);
+      });
+
+    // Agregar el creador del producto a la lista de seguidos del usuario actual
+    db.collection('followings')
+      .doc(currentUserId)
+      .collection('userFollowings')
+      .doc(creatorUserId)
+      .set({})
+      .catch((error) => {
+        console.error('Error al agregar seguido: ', error);
+      });
+  };
+
   return (
     <Paper className={classes.detailsContainer}>
       <Typography variant="h5" gutterBottom>
@@ -165,34 +205,46 @@ const Details = (props) => {
           <img src={getImageUrl(listing)} alt={Name} className={classes.image} />
         </Box>
       )}
-      <div className={classes.reviewContainer}>
-        <Typography variant="h6" gutterBottom>
-          Deja tu reseña
-        </Typography>
-        <div className={classes.reviewForm}>
-          <Box className={classes.ratingContainer}>
-            <Rating value={rating} onChange={handleRatingChange} precision={0.5} />
-          </Box>
-          <TextField
-            className={classes.commentField}
-            label="Comentario"
-            multiline
-            rows={4}
-            variant="outlined"
-            value={comment}
-            onChange={handleCommentChange}
-          />
-          <Button
-            className={classes.submitButton}
-            variant="contained"
-            color="primary"
-            onClick={handleSubmitReview}
-            disabled={!rating || !comment}
-          >
-            Enviar reseña
-          </Button>
-        </div>
+      <div className={classes.followButton}>
+        <IconButton onClick={handleFollow} disabled={!creatorUserId || creatorUserId === props.userId}>
+          <PersonAddIcon />
+        </IconButton>
+        <Typography variant="body1">Seguir al creador del producto</Typography>
       </div>
+      {props.userId ? (
+        <div className={classes.reviewContainer}>
+          <Typography variant="h6" gutterBottom>
+            Deja tu reseña
+          </Typography>
+          <div className={classes.reviewForm}>
+            <Box className={classes.ratingContainer}>
+              <Rating value={rating} onChange={handleRatingChange} precision={0.5} />
+            </Box>
+            <TextField
+              className={classes.commentField}
+              label="Comentario"
+              multiline
+              rows={4}
+              variant="outlined"
+              value={comment}
+              onChange={handleCommentChange}
+            />
+            <Button
+              className={classes.submitButton}
+              variant="contained"
+              color="primary"
+              onClick={handleSubmitReview}
+              disabled={!rating || !comment}
+            >
+              Enviar reseña
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <Typography variant="body1">
+          Debes iniciar sesión para dejar una reseña.
+        </Typography>
+      )}
       <Typography variant="h6" gutterBottom>
         Reseñas
       </Typography>
