@@ -3,6 +3,7 @@ import thunk from 'redux-thunk';
 import reducers from './reducers';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/firestore';
+import { getUserIdFromCookie } from '../Router';
 
 const initialState = {
   user: {},
@@ -28,15 +29,21 @@ const reducer = (state = initialState, action) => {
 
 const store = createStore(reducer, initialState, applyMiddleware(thunk));
 
-// Función para obtener los productos de Firebase
-const fetchListingsFromFirebase = async (dispatch) => {
+const fetchListingsFromFirebase = async (dispatch, userId) => {
   const db = firebase.firestore();
+  const followingsSnapshot = await db.collection('followings').doc(userId).collection('userFollowings').get();
+  const followingsData = followingsSnapshot.docs.map((doc) => doc.id);
+
   const querySnapshot = await db.collection('productos').get();
   const listings = querySnapshot.docs.map((doc) => doc.data());
-  dispatch({ type: 'SET_LISTINGS', payload: listings });
+
+  const followedListings = listings.filter((listing) => followingsData.includes(listing.userId));
+  const otherListings = listings.filter((listing) => !followingsData.includes(listing.userId));
+  const prioritizedListings = [...followedListings, ...otherListings];
+
+  dispatch({ type: 'SET_LISTINGS', payload: prioritizedListings });
 };
 
-// Obtener los productos de Firebase al iniciar la aplicación
-fetchListingsFromFirebase(store.dispatch);
+fetchListingsFromFirebase(store.dispatch, getUserIdFromCookie());
 
 export default store;
