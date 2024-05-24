@@ -6,7 +6,6 @@ import Listings from './containers/Listings';
 import Login from './containers/Login';
 import Details from './containers/Details';
 import About from './components/About';
-import HomePage from './components/HomePage';
 import UserProfile from './components/UserProfile';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/firestore';
@@ -23,6 +22,7 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
+
 const db = firebase.firestore();
 const analytics = firebase.analytics();
 
@@ -31,7 +31,7 @@ export const checkAuth = () => {
   return !!cookies["loggedIn"];
 };
 
-const getUserIdFromCookie = () => {
+export const getUserIdFromCookie = () => {
   const cookies = cookie.parse(document.cookie);
   const userData = JSON.parse(cookies["user"] || '{}');
   return userData.uid;
@@ -56,9 +56,8 @@ const Router = () => (
     <Route path="/listings/:id" render={(props) => <Details {...props} userId={getUserIdFromCookie()} />} />
     <ProtectedRoute path="/add" component={AddListing} />
     <Route path="/about" component={About} />
-    <Route path="/listings" component={Listings} />
     <ProtectedRoute path="/profile" component={UserProfile} />
-    <Route path="/" component={HomePage} />
+    <Route path="/" component={Listings} />
   </Switch>
 );
 
